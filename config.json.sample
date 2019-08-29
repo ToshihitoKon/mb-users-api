@@ -1,0 +1,4 @@
+{
+    "certificateFile": "/YOUR/CERTIFICATEF.json/PATH",
+    "databaseUrl": "https://yourdatabase.firebaseio.com"
+}
