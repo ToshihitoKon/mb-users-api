@@ -2,7 +2,8 @@ import datetime
 import json
 from distutils.util import strtobool
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 import firebase_admin
 from firebase_admin import credentials
@@ -12,6 +13,8 @@ configFile = open('config.json', 'r')
 config = json.load(configFile)
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
+CORS(app)
 
 def initialize_admin():
     cred = credentials.Certificate(config['certificateFile'])
@@ -19,30 +22,41 @@ def initialize_admin():
 
 @app.route('/users/search', methods=['POST'])
 def users_search():
-    userId = request.form['userId']
+    try:
+        userId = request.json['userId']
+    except:
+        return jsonify(), 400
+
     ref = db.reference('/users/' + userId)
     res = ref.get()
     if not res:
-        return json.dumps('', ensure_ascii=False), 200
+        return jsonify(), 200
     res['userId'] = userId
-    return json.dumps(res, ensure_ascii=False), 200
+    return jsonify(res), 200
 
 @app.route('/users/regist', methods=['POST'])
 def users_regist():
-    user = {
-        'userName' : request.form['userName'],
-        'contractDate' : datetime.date.today().isoformat(),
-    }
+    user = dict()
+
+    # require args
     try:
-        user['isMonthlyMembership'] = strtobool(request.form['isMonthlyMembership']) == 1
+        user['userName'] = request.json['userName']
+    except:
+        return jsonify(), 400
+
+    # optional args
+    try:
+        user['isMonthlyMembership'] = strtobool(request.json['isMonthlyMembership']) == 1
     except:
         user['isMonthlyMembership'] = False
 
+    user['contractDate'] = datetime.date.today().isoformat()
     ref = db.reference('/users')
     newItem = ref.push(user)
+
     res = newItem.get()
     res['userId'] = newItem.key
-    return json.dumps(res, ensure_ascii=False), 200
+    return jsonify(res), 200
 
 initialize_admin()
 app.run(host=config['host'], port=config['port'])
