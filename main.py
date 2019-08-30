@@ -1,5 +1,6 @@
 import datetime
 import json
+from distutils.util import strtobool
 
 from flask import Flask, request
 
@@ -28,20 +29,19 @@ def users_search():
 
 @app.route('/users/regist', methods=['POST'])
 def users_regist():
-    userId = request.form['userId']
     user = {
         'userName' : request.form['userName'],
-        'isMonthlyMembership' : request.form['isMonthlyMembership'] == 'true',
         'contractDate' : datetime.date.today().isoformat(),
     }
+    try:
+        user['isMonthlyMembership'] = strtobool(request.form['isMonthlyMembership']) == 1
+    except:
+        user['isMonthlyMembership'] = False
 
-    ref = db.reference('/users/' + userId)
-    if ref.get():
-        return json.dumps({'error':'userid duplicate'}, ensure_ascii=False), 409
-
-    ref.set(user)
-    res = ref.get()
-    res['userId'] = userId
+    ref = db.reference('/users')
+    newItem = ref.push(user)
+    res = newItem.get()
+    res['userId'] = newItem.key
     return json.dumps(res, ensure_ascii=False), 200
 
 if __name__ == '__main__':
