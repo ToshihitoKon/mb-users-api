@@ -44,6 +44,5 @@ def users_regist():
     res['userId'] = newItem.key
     return json.dumps(res, ensure_ascii=False), 200
 
-if __name__ == '__main__':
-    initialize_admin()
-    app.run(host=config['host'], port=config['port'])
+initialize_admin()
+app.run(host=config['host'], port=config['port'])
